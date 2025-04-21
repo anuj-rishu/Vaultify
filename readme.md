@@ -33,18 +33,22 @@ Vaultify is a secure document management system that allows users to upload, sto
 ## 📦 Installation
 
 ### 1. Clone the repository
+
 ```bash
 git clone https://github.com/anuj-rishu/Vaultify
 cd vaultify
 ```
 
 ### 2. Install dependencies
+
 ```bash
 npm install
 ```
 
 ### 3. Setup Environment Variables
+
 Create a `.env` file inside the `server` directory and add the following:
+
 ```env
 PORT=5000
 MONGO_URI=your_mongo_db_connection_string
@@ -55,6 +59,7 @@ B2_BUCKET_ID=your_backblaze_bucket_id
 ```
 
 ### 4. Start the server
+
 ```bash
 npm start
 ```
@@ -75,10 +80,12 @@ docker run -p 5000:5000 --env-file server/.env vaultify
 ## 📝 API Endpoints
 
 ### Authentication
+
 - `POST /auth/login` — Login with username and password.
 - `DELETE /auth/logout` — Logout user.
 
 ### Documents
+
 - `GET /documents` — Get all documents for the authenticated user.
 - `GET /documents/:id` — Get a specific document by ID.
 - `GET /documents/search/:filename` — Search for documents by filename.
@@ -147,6 +154,3 @@ For questions or support, please open an issue on the [GitHub repository](https:
 # ✨ Thank You For Using Vaultify!
 
 ---
-
-If you want, I can also generate a real LICENSE file (Apache 2.0 text) — want me to include that too? 📜🚀  
-Also, would you like a Table of Contents added to the top to make it super professional? 📚
