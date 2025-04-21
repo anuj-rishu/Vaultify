@@ -198,7 +198,7 @@ async function searchByFilename(req, res) {
     
     const documents = await Document.find({
       userId: req.user._id,
-      originalName: { $regex: filename, $options: 'i' } // Case-insensitive search on filename only
+      originalName: { $regex: filename, $options: 'i' } 
     });
 
     const formattedDocuments = documents.map((doc) => ({
