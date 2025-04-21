@@ -73,7 +73,16 @@ async function uploadDocument(req, res) {
 
 async function getDocuments(req, res) {
   try {
-    const documents = await Document.find({ userId: req.user._id });
+    const page = parseInt(req.query.page) || 1; // default page 1
+    const limit = parseInt(req.query.limit) || 20; // default 20 documents per page
+    const skip = (page - 1) * limit;
+
+    const documents = await Document.find({ userId: req.user._id })
+      .sort({ createdAt: -1 }) // optional: latest first
+      .skip(skip)
+      .limit(limit);
+
+    const totalDocuments = await Document.countDocuments({ userId: req.user._id });
 
     const formattedDocuments = documents.map((doc) => ({
       id: doc._id,
@@ -87,12 +96,18 @@ async function getDocuments(req, res) {
       updatedAt: doc.updatedAt,
     }));
 
-    res.json(formattedDocuments);
+    res.json({
+      documents: formattedDocuments,
+      currentPage: page,
+      totalPages: Math.ceil(totalDocuments / limit),
+      totalDocuments,
+    });
   } catch (error) {
     logger.error("Error retrieving documents", { error: error.message });
     res.status(500).json({ error: "Failed to retrieve documents" });
   }
 }
+
 
 async function searchDocuments(req, res) {
   try {
