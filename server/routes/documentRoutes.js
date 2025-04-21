@@ -6,6 +6,7 @@ const {
   getDocuments,
   getDocument,
   deleteDocument,
+  searchByFilename,
 } = require("../handlers/documentHandler");
 
 const router = express.Router();
@@ -18,13 +19,12 @@ const upload = multer({
 
 router.post("/upload", tokenMiddleware, upload.single("file"), uploadDocument);
 
-// Get all documents for the user
 router.get("/", tokenMiddleware, getDocuments);
 
-// Get a specific document
+router.get("/search/:filename", tokenMiddleware, searchByFilename);
+
 router.get("/:id", tokenMiddleware, getDocument);
 
-// Delete a document
 router.delete("/:id", tokenMiddleware, deleteDocument);
 
 module.exports = router;

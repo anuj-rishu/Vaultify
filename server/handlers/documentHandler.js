@@ -20,7 +20,9 @@ async function uploadDocument(req, res) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const { description, tags } = req.body;
+    const { description, tags, customName } = req.body;
+
+    const displayName = customName || file.originalname;
 
     const fileName = await generateUniqueFileName(file.originalname);
 
@@ -35,7 +37,7 @@ async function uploadDocument(req, res) {
     const document = new Document({
       userId: req.user._id,
       fileName: fileName,
-      originalName: file.originalname,
+      originalName: displayName,
       fileType: file.mimetype,
       fileSize: file.size,
       b2FileId: b2Response.fileId,
@@ -45,10 +47,8 @@ async function uploadDocument(req, res) {
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
     });
 
-  
     await document.save();
 
-  
     res.status(201).json({
       message: "Document uploaded successfully",
       document: {
@@ -91,6 +91,42 @@ async function getDocuments(req, res) {
   } catch (error) {
     logger.error("Error retrieving documents", { error: error.message });
     res.status(500).json({ error: "Failed to retrieve documents" });
+  }
+}
+
+async function searchDocuments(req, res) {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.status(400).json({ error: "Search query is required" });
+    }
+
+    const documents = await Document.find({
+      userId: req.user._id,
+      $or: [
+        { originalName: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+        { tags: { $in: [new RegExp(query, "i")] } },
+      ],
+    });
+
+    const formattedDocuments = documents.map((doc) => ({
+      id: doc._id,
+      fileName: doc.originalName,
+      fileType: doc.fileType,
+      fileSize: doc.fileSize,
+      description: doc.description,
+      tags: doc.tags,
+      downloadUrl: doc.downloadUrl,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    }));
+
+    res.json(formattedDocuments);
+  } catch (error) {
+    logger.error("Error searching documents", { error: error.message });
+    res.status(500).json({ error: "Failed to search documents" });
   }
 }
 
@@ -152,9 +188,44 @@ async function deleteDocument(req, res) {
   }
 }
 
+async function searchByFilename(req, res) {
+  try {
+    const filename = req.params.filename;
+    
+    if (!filename) {
+      return res.status(400).json({ error: "Filename parameter is required" });
+    }
+    
+    const documents = await Document.find({
+      userId: req.user._id,
+      originalName: { $regex: filename, $options: 'i' } // Case-insensitive search on filename only
+    });
+
+    const formattedDocuments = documents.map((doc) => ({
+      id: doc._id,
+      fileName: doc.originalName,
+      fileType: doc.fileType,
+      fileSize: doc.fileSize,
+      description: doc.description,
+      tags: doc.tags,
+      downloadUrl: doc.downloadUrl,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    }));
+
+    res.json(formattedDocuments);
+  } catch (error) {
+    logger.error("Error searching documents by filename", { error: error.message });
+    res.status(500).json({ error: "Failed to search documents by filename" });
+  }
+}
+
 module.exports = {
   uploadDocument,
   getDocuments,
   getDocument,
   deleteDocument,
+  searchDocuments,
+  searchByFilename, 
 };
+
