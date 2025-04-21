@@ -97,7 +97,7 @@ Using Postman or a similar tool:
 1. Make a `POST` request to `/documents/upload`.
 2. Set the `Authorization` header:
    ```
-   Bearer YOUR_JWT_TOKEN
+   x-csrf-token  your_x-csrf-token
    ```
 3. Use `form-data` with the following fields:
    - `file`: Your file
