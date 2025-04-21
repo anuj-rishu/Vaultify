@@ -75,35 +75,31 @@ async function getDocuments(req, res) {
   // Set a shorter timeout to ensure we respond before Heroku's 30s limit
   const timeout = setTimeout(() => {
     logger.warn('Request timeout in getDocuments');
-    res.status(503).json({ error: "Request timed out" });
-  }, 20000); // Reduced to 20s for safety
+    if (!res.headersSent) {
+      res.status(503).json({ error: "Request timed out" });
+    }
+  }, 15000); // Reduced to 15s for more safety margin
   
   try {
     logger.info("Fetching documents for user", { userId: req.user._id });
     
     // Smaller batch size for faster response
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20; // Reduced default limit
+    const limit = parseInt(req.query.limit) || 10; // Further reduced limit
     const skip = (page - 1) * limit;
     
-    // Count documents separately for pagination info
-    const totalCount = await Document.countDocuments({ userId: req.user._id });
-    
-    logger.info("Starting document query");
-    
-    // More selective field list to reduce payload size
+    // First get just the documents without counting total
     const documents = await Document.find({ userId: req.user._id })
-      .select('originalName fileType fileSize downloadUrl createdAt')
-      .sort({ createdAt: -1 }) // Sort by newest first
+      .select('_id originalName fileType fileSize downloadUrl createdAt')
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean()
-      .exec();
-
-    logger.info(`Found ${documents.length} documents, processing response`);
-
-    // Simplify mapping to reduce processing
-    const formattedDocuments = documents.map((doc) => ({
+      .lean();
+    
+    logger.info(`Found ${documents.length} documents`);
+    
+    // Process in small batches to avoid memory spikes
+    const formattedDocuments = documents.map(doc => ({
       id: doc._id,
       fileName: doc.originalName,
       fileType: doc.fileType,
@@ -111,25 +107,41 @@ async function getDocuments(req, res) {
       downloadUrl: doc.downloadUrl,
       createdAt: doc.createdAt
     }));
-
-    logger.info("Sending response");
+    
+    // Count in separate query only if needed for pagination
+    let totalCount = 0;
+    let hasMore = false;
+    
+    if (documents.length === limit) {
+      // If we have a full page, just indicate there's more without counting
+      hasMore = true;
+    } else {
+      // Only count if we need an exact pagination
+      totalCount = await Document.countDocuments({ userId: req.user._id });
+    }
+    
+    logger.info("Preparing response");
+    
     clearTimeout(timeout);
     
-    // Send response
-    return res.json({
+    // Send minimal response immediately
+    return res.status(200).json({
       documents: formattedDocuments,
       pagination: {
         page,
         limit,
-        total: totalCount,
-        pages: Math.ceil(totalCount / limit),
-        hasMore: documents.length === limit && skip + documents.length < totalCount
+        hasMore,
+        total: totalCount || undefined,
+        pages: totalCount ? Math.ceil(totalCount / limit) : undefined
       }
     });
   } catch (error) {
     clearTimeout(timeout);
-    logger.error("Error retrieving documents", { error: error.message, stack: error.stack });
-    return res.status(500).json({ error: "Failed to retrieve documents" });
+    logger.error("Error retrieving documents", { error: error.message });
+    
+    if (!res.headersSent) {
+      return res.status(500).json({ error: "Failed to retrieve documents" });
+    }
   }
 }
 
