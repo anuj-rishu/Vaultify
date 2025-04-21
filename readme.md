@@ -152,5 +152,3 @@ For questions or support, please open an issue on the [GitHub repository](https:
 ---
 
 # ✨ Thank You For Using Vaultify!
-
----
