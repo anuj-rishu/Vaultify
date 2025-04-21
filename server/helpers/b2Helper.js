@@ -1,4 +1,5 @@
 const B2 = require('backblaze-b2');
+const logger = require('../utils/logger');
 
 class B2Helper {
   constructor() {
@@ -10,54 +11,57 @@ class B2Helper {
     this.bucketName = process.env.B2_BUCKET_NAME;
     this.isAuthorized = false;
   }
-  
+
   async authorize() {
-    if (!this.isAuthorized) {
+    if (this.isAuthorized) return;
+
+    try {
       await this.b2.authorize();
       this.isAuthorized = true;
       this.downloadUrl = this.b2.downloadUrl;
+    } catch (error) {
+      logger.error('B2 authorization error:', error);
+      throw new Error('Failed to authorize B2: ' + error.message);
     }
   }
-  
+
   async uploadFile(fileName, data, contentType) {
     try {
       await this.authorize();
-      
-      const response = await this.b2.getUploadUrl({
+
+      const { data: uploadUrlResponse } = await this.b2.getUploadUrl({
         bucketId: this.bucketId
       });
-      
+
       const uploadResult = await this.b2.uploadFile({
-        uploadUrl: response.data.uploadUrl,
-        uploadAuthToken: response.data.authorizationToken,
+        uploadUrl: uploadUrlResponse.uploadUrl,
+        uploadAuthToken: uploadUrlResponse.authorizationToken,
         fileName: fileName,
         data: data,
         contentType: contentType
       });
-      
       return uploadResult.data;
     } catch (error) {
-      console.error('B2 upload error:', error);
+      logger.error(`B2 upload error for file ${fileName}:`, error);
       throw new Error('Failed to upload file to B2: ' + error.message);
     }
   }
-  
+
   getDownloadUrl(fileName) {
     return `${this.downloadUrl}/file/${this.bucketName}/${fileName}`;
   }
-  
+
   async deleteFile(fileId, fileName) {
     try {
       await this.authorize();
-      
+
       const response = await this.b2.deleteFileVersion({
         fileId: fileId,
         fileName: fileName
       });
-      
       return response.data;
     } catch (error) {
-      console.error('B2 delete error:', error);
+      logger.error(`B2 delete error for file ${fileName} (ID: ${fileId}):`, error);
       throw new Error('Failed to delete file from B2: ' + error.message);
     }
   }

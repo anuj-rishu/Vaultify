@@ -7,34 +7,13 @@ const documentSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    fileName: {
-      type: String,
-      required: true,
-    },
-    originalName: {
-      type: String,
-      required: true,
-    },
-    fileType: {
-      type: String,
-      required: true,
-    },
-    fileSize: {
-      type: Number,
-      required: true,
-    },
-    b2FileId: {
-      type: String,
-      required: true,
-    },
-    b2FileName: {
-      type: String,
-      required: true,
-    },
-    downloadUrl: {
-      type: String,
-      required: true,
-    },
+    fileName: { type: String, required: true },
+    originalName: { type: String, required: true },
+    fileType: { type: String, required: true },
+    fileSize: { type: Number, required: true },
+    b2FileId: { type: String, required: true },
+    b2FileName: { type: String, required: true },
+    downloadUrl: { type: String, required: true },
     description: String,
     tags: [String],
   },

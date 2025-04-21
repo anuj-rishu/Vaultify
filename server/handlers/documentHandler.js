@@ -2,19 +2,27 @@ const Document = require("../models/document");
 const b2Helper = require("../helpers/b2Helper");
 const path = require("path");
 const crypto = require("crypto");
+const { promisify } = require("util");
+const randomBytes = promisify(crypto.randomBytes);
+const logger = require("../utils/logger");
+
+const generateUniqueFileName = async (originalName) => {
+  const uniquePrefix = (await randomBytes(8)).toString("hex");
+  return `${uniquePrefix}_${path.basename(originalName)}`;
+};
 
 async function uploadDocument(req, res) {
   try {
     const file = req.file;
 
     if (!file) {
+      logger.warn("No file uploaded in request");
       return res.status(400).json({ error: "No file uploaded" });
     }
 
     const { description, tags } = req.body;
 
-    const uniquePrefix = crypto.randomBytes(16).toString("hex");
-    const fileName = `${uniquePrefix}_${path.basename(file.originalname)}`;
+    const fileName = await generateUniqueFileName(file.originalname);
 
     const b2Response = await b2Helper.uploadFile(
       fileName,
@@ -37,8 +45,10 @@ async function uploadDocument(req, res) {
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
     });
 
+  
     await document.save();
 
+  
     res.status(201).json({
       message: "Document uploaded successfully",
       document: {
@@ -53,7 +63,10 @@ async function uploadDocument(req, res) {
       },
     });
   } catch (error) {
-    console.error("Error uploading document:", error);
+    logger.error("Error uploading document", {
+      error: error.message,
+      stack: error.stack,
+    });
     res.status(500).json({ error: "Failed to upload document" });
   }
 }
@@ -76,7 +89,7 @@ async function getDocuments(req, res) {
 
     res.json(formattedDocuments);
   } catch (error) {
-    console.error("Error retrieving documents:", error);
+    logger.error("Error retrieving documents", { error: error.message });
     res.status(500).json({ error: "Failed to retrieve documents" });
   }
 }
@@ -106,7 +119,9 @@ async function getDocument(req, res) {
       updatedAt: document.updatedAt,
     });
   } catch (error) {
-    console.error("Error retrieving document:", error);
+    logger.error(`Error retrieving document: ${req.params.id}`, {
+      error: error.message,
+    });
     res.status(500).json({ error: "Failed to retrieve document" });
   }
 }
@@ -130,7 +145,9 @@ async function deleteDocument(req, res) {
 
     res.json({ message: "Document deleted successfully" });
   } catch (error) {
-    console.error("Error deleting document:", error);
+    logger.error(`Error deleting document: ${documentId}`, {
+      error: error.message,
+    });
     res.status(500).json({ error: "Failed to delete document" });
   }
 }
