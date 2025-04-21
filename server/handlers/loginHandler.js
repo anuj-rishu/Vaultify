@@ -1,6 +1,6 @@
 const axios = require("axios");
 const { getUserWithPhoto } = require("../helpers/userHelper");
-const User = require("../models/User");
+const User = require("../models/user");
 
 async function login(username, password) {
   const user = username.replace("@srmist.edu.in", "");
@@ -98,26 +98,23 @@ async function login(username, password) {
       };
     }
 
-    // After successful login, get user data and store in MongoDB
     try {
       const userData = await getUserWithPhoto(session.cookies);
-      
-      // Update or create user in MongoDB with token
+
       await User.findOneAndUpdate(
         { regNumber: userData.regNumber },
         {
           ...userData,
-          token: session.cookies,
-          tokenCreatedAt: new Date(),
-          lastLogin: new Date()
+          lastLogin: new Date(),
         },
         { upsert: true, new: true }
       );
-      
-      console.log(`User ${userData.name} (${userData.regNumber}) data and token saved to MongoDB`);
+
+      console.log(
+        `User ${userData.name} (${userData.regNumber}) data saved to MongoDB (without token)`
+      );
     } catch (dbError) {
       console.error("Error saving user to database:", dbError);
-      // Continue with login process even if DB storage fails
     }
 
     return {
@@ -174,16 +171,6 @@ async function getSession(password, lookup) {
 
 async function logout(token) {
   try {
-    // Also update MongoDB to mark the user as logged out
-    try {
-      await User.findOneAndUpdate(
-        { token: token },
-        { $unset: { token: 1, tokenCreatedAt: 1 } }
-      );
-    } catch (dbError) {
-      console.error("Error updating user logout status in database:", dbError);
-    }
-    
     const response = await axios({
       method: "POST",
       url: "https://academia.srmist.edu.in/accounts/logout",

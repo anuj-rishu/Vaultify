@@ -24,14 +24,6 @@ const userSchema = new mongoose.Schema({
   photoUrl: String,
   photoBase64: String,
   advisors: [advisorSchema],
-  token: {
-    type: String,
-    required: true
-  },
-  tokenCreatedAt: {
-    type: Date,
-    default: Date.now
-  },
   lastLogin: {
     type: Date,
     default: Date.now

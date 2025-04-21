@@ -8,6 +8,7 @@ const { limiter } = require("./middleware/rateLimiter");
 const routes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const connectDB = require("./config/db");
+const documentRoutes = require('./routes/documentRoutes');
 
 if (process.env.DEV_MODE === "true") {
   dotenv.config();
@@ -47,7 +48,7 @@ app.use(limiter);
 
 app.use("/", routes);
 app.use("/auth", authRoutes);
-
+app.use('/documents', documentRoutes);
 app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
 });
