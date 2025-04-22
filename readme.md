@@ -1,7 +1,3 @@
-Sure!  
-Here’s **everything combined into one single `README.md` file**, ready for you to just save:
-
----
 
 # Vaultify
 
