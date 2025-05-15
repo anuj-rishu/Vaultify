@@ -136,7 +136,7 @@ or search across name, description, and tags:
 
 ## 📜 License
 
-This project is licensed under the **Apache License 2.0**.  
+This project is licensed under the CC BY-NC-ND 4.0 License.  
 See the [LICENSE](LICENSE) file for details.
 
 ---
